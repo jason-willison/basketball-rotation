@@ -21,15 +21,11 @@
         .btn-primary { background: #FF6B35; color: white; }
         .btn-secondary { background: #e0e0e0; color: #2c2c2c; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .player-checkbox { display: flex; align-items: center; padding: 16px; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; margin-bottom: 12px; transition: all 0.3s ease; }
-        .player-checkbox.selected { background: #e8f5e8; border-color: #28a745; }
-        .player-checkbox input { margin-right: 12px; transform: scale(1.3); }
-        .key-player-checkboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .key-player-checkboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         .key-player-checkbox { display: flex; align-items: center; padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s ease; }
         .key-player-checkbox.selected { background: #FFF3E0; border-color: #FF6B35; color: #FF6B35; font-weight: 600; }
         .key-player-checkbox input { margin-right: 8px; transform: scale(1.1); }
         .key-player-checkbox.disabled { opacity: 0.5; cursor: not-allowed; }
-        .selected-count { text-align: center; margin: 20px 0; font-size: 1.1rem; font-weight: 600; color: #FF6B35; }
         .rotation-display { padding: 16px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px; }
         .rotation-period { margin-bottom: 15px; padding: 12px; background: white; border-radius: 6px; border-left: 4px solid #FF6B35; }
         .player-badge { background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; margin: 2px; display: inline-block; }
@@ -51,10 +47,10 @@
         </div>
 
         <div class="content">
-            <!-- Team Roster Section -->
-            <section id="roster" class="section active">
-                <h2>Team Roster</h2>
-                <p class="help-text">Enter your team's player names:</p>
+            <!-- Step 1: Available Players -->
+            <section id="players" class="section active">
+                <h2>Available Players</h2>
+                <p class="help-text">Enter the players who are available for today's game:</p>
                 
                 <input type="text" class="player-input" placeholder="Player 1 name" id="player1">
                 <input type="text" class="player-input" placeholder="Player 2 name" id="player2">
@@ -67,20 +63,21 @@
                 <input type="text" class="player-input" placeholder="Player 9 name (optional)" id="player9">
                 <input type="text" class="player-input" placeholder="Player 10 name (optional)" id="player10">
                 
-                <button class="btn btn-primary" onclick="saveRoster()">Save Roster</button>
+                <button class="btn btn-primary" onclick="saveAvailablePlayers()">Save Available Players</button>
             </section>
 
-            <!-- Available Players Section -->
-            <section id="available" class="section">
-                <h2>Game Day - Available Players</h2>
-                <p class="help-text">Select which players showed up today:</p>
+            <!-- Key Players Section -->
+            <section id="keyplayers" class="section">
+                <h2>Key Players (Optional)</h2>
+                <p class="help-text">Select up to 2 players who should get extra playing time (~25% more minutes):</p>
+                <p class="help-text" style="margin-bottom: 15px; font-size: 0.85rem; color: #888;"><strong>Good for:</strong> Your best scorers, team leaders, or most experienced players.</p>
                 
-                <div id="player-checkboxes">
+                <div id="key-player-checkboxes" class="key-player-checkboxes">
                     <!-- Dynamically populated -->
                 </div>
                 
-                <div class="selected-count">
-                    <span id="selected-count">0</span> players selected
+                <div class="selected-key-count" style="text-align: center; margin: 15px 0; font-size: 0.9rem; color: #666;">
+                    <span id="selected-key-count">0</span> of 2 key players selected
                 </div>
                 
                 <div style="margin: 20px 0;">
@@ -89,18 +86,8 @@
                     <input type="number" id="rotation-minutes" class="player-input" value="7" min="3" max="10" style="width: 100px; text-align: center; font-size: 18px; font-weight: bold;">
                 </div>
                 
-                <div id="key-players-section" style="margin: 20px 0; display: none;">
-                    <h3 style="color: #FF6B35; margin-bottom: 8px;">Key Players (Optional)</h3>
-                    <p class="help-text" style="margin-bottom: 15px;">Select up to 2 players who should get extra playing time. Key players will play approximately 25% more minutes than other players while still maintaining fair rotations for the team.<br><br><strong>Good for:</strong> Your best scorers, team leaders, or most experienced players.</p>
-                    <div id="key-player-checkboxes" class="key-player-checkboxes">
-                        <!-- Dynamically populated -->
-                    </div>
-                    <div class="selected-key-count" style="text-align: center; margin: 10px 0; font-size: 0.9rem; color: #666;">
-                        <span id="selected-key-count">0</span> of 2 key players selected
-                    </div>
-                </div>
-                
-                <button id="calc-btn" class="btn btn-primary" onclick="calculateRotations()" disabled>Calculate Fair Rotations</button>
+                <button class="btn btn-secondary" onclick="showSection('players')">Back to Players</button>
+                <button class="btn btn-primary" onclick="calculateRotations()">Calculate Fair Rotations</button>
             </section>
 
             <!-- Rotation Schedule Section -->
@@ -127,7 +114,7 @@
                     <!-- Populated by JavaScript -->
                 </div>
                 
-                <button class="btn btn-secondary" onclick="showSection('available')">Back to Player Selection</button>
+                <button class="btn btn-secondary" onclick="showSection('keyplayers')">Back to Key Players</button>
                 <button class="btn btn-primary" onclick="showSection('timer')">Start Game Timer</button>
             </section>
 
@@ -155,15 +142,14 @@
 
         <!-- Bottom Navigation -->
         <div class="nav">
-            <button class="nav-btn active" onclick="showSection('roster')">Roster</button>
-            <button class="nav-btn" onclick="showSection('available')">Available</button>
+            <button class="nav-btn active" onclick="showSection('players')">Players</button>
+            <button class="nav-btn" onclick="showSection('keyplayers')">Key Players</button>
             <button class="nav-btn" onclick="showSection('rotation')">Rotations</button>
             <button class="nav-btn" onclick="showSection('timer')">Timer</button>
         </div>
     </div>
 
     <script>
-        let players = [];
         let availablePlayers = [];
         let keyPlayers = [];
         let rotations = {};
@@ -180,68 +166,28 @@
             document.querySelector(`[onclick="showSection('${section}')"]`).classList.add('active');
         }
 
-        function saveRoster() {
-            console.log('Saving roster...');
-            players = [];
+        function saveAvailablePlayers() {
+            console.log('Saving available players...');
+            availablePlayers = [];
             for (let i = 1; i <= 10; i++) {
                 const input = document.getElementById(`player${i}`);
                 if (input.value.trim()) {
-                    players.push({
+                    availablePlayers.push({
                         id: i,
-                        name: input.value.trim(),
-                        available: false
+                        name: input.value.trim()
                     });
                 }
             }
             
-            console.log('Players saved:', players);
+            console.log('Available players saved:', availablePlayers);
             
-            if (players.length < 5) {
+            if (availablePlayers.length < 5) {
                 alert('You need at least 5 players for a basketball team!');
                 return;
             }
             
-            populatePlayerCheckboxes();
-            showSection('available');
-        }
-
-        function populatePlayerCheckboxes() {
-            console.log('Populating checkboxes...');
-            const container = document.getElementById('player-checkboxes');
-            container.innerHTML = '';
-            
-            players.forEach(player => {
-                const div = document.createElement('div');
-                div.className = 'player-checkbox';
-                div.innerHTML = `
-                    <input type="checkbox" id="check-${player.id}" data-player-id="${player.id}">
-                    <label for="check-${player.id}">${player.name}</label>
-                `;
-                
-                const checkbox = div.querySelector('input');
-                checkbox.addEventListener('change', function() {
-                    console.log(`Checkbox changed for ${player.name}: ${this.checked}`);
-                    div.classList.toggle('selected', this.checked);
-                    player.available = this.checked;
-                    updateSelectedCount();
-                    updateKeyPlayersSection();
-                });
-                
-                container.appendChild(div);
-            });
-            updateSelectedCount();
-        }
-        
-        function updateKeyPlayersSection() {
-            const availableCount = players.filter(p => p.available).length;
-            const keySection = document.getElementById('key-players-section');
-            
-            if (availableCount >= 5) {
-                keySection.style.display = 'block';
-                populateKeyPlayerCheckboxes();
-            } else {
-                keySection.style.display = 'none';
-            }
+            populateKeyPlayerCheckboxes();
+            showSection('keyplayers');
         }
         
         function populateKeyPlayerCheckboxes() {
@@ -249,9 +195,7 @@
             container.innerHTML = '';
             keyPlayers = [];
             
-            const availablePlayersOnly = players.filter(p => p.available);
-            
-            availablePlayersOnly.forEach(player => {
+            availablePlayers.forEach(player => {
                 const div = document.createElement('div');
                 div.className = 'key-player-checkbox';
                 div.innerHTML = `
@@ -275,7 +219,6 @@
                     keyPlayers.push(player);
                     div.classList.add('selected');
                 } else {
-                    // Uncheck if we're at the limit
                     div.querySelector('input').checked = false;
                     alert('You can only select up to 2 key players.');
                     return;
@@ -305,27 +248,10 @@
             document.getElementById('selected-key-count').textContent = keyPlayers.length;
         }
 
-        function updateSelectedCount() {
-            const availableCount = players.filter(p => p.available).length;
-            console.log(`Available players: ${availableCount}`);
-            
-            document.getElementById('selected-count').textContent = availableCount;
-            
-            const calcBtn = document.getElementById('calc-btn');
-            calcBtn.disabled = availableCount < 5;
-            
-            if (availableCount >= 5) {
-                calcBtn.classList.remove('btn-disabled');
-            } else {
-                calcBtn.classList.add('btn-disabled');
-            }
-        }
-
         function calculateRotations() {
             console.log('Calculating rotations...');
-            
-            availablePlayers = players.filter(p => p.available);
-            console.log('Available players for rotation:', availablePlayers);
+            console.log('Available players:', availablePlayers);
+            console.log('Key players:', keyPlayers);
             
             if (availablePlayers.length < 5) {
                 alert('You need at least 5 available players!');
@@ -348,8 +274,6 @@
             const periodsPerHalf = Math.ceil(20 / rotationMinutes);
             const actualPeriodLength = 20 / periodsPerHalf;
             
-            console.log(`Periods per half: ${periodsPerHalf}, Period length: ${actualPeriodLength.toFixed(1)} min`);
-            
             rotations = {
                 firstHalf: [],
                 secondHalf: [],
@@ -361,107 +285,75 @@
                 rotations.playingTimes[player.id] = 0;
             });
             
-            // Create weighted player pool (key players appear more often)
-            const weightedPlayers = [...availablePlayers];
-            keyPlayers.forEach(keyPlayer => {
-                // Add key players extra times (25% more appearances)
-                const extraAppearances = Math.ceil(periodsPerHalf * 0.5); // Roughly 25% more
-                for (let i = 0; i < extraAppearances; i++) {
-                    weightedPlayers.push(keyPlayer);
-                }
-            });
+            // Calculate target minutes for each player type
+            const totalGameMinutes = 40; // 2 halves
+            const totalPlayerMinutes = 5 * totalGameMinutes; // 5 players on court for 40 minutes = 200 player-minutes
             
-            // Generate first half
-            for (let i = 0; i < periodsPerHalf; i++) {
-                const startTime = i * actualPeriodLength;
-                const endTime = Math.min(20, (i + 1) * actualPeriodLength);
-                const onCourt = [];
+            const keyPlayerIds = keyPlayers.map(p => p.id);
+            const regularPlayerIds = availablePlayers.filter(p => !keyPlayerIds.includes(p.id)).map(p => p.id);
+            
+            let targetMinutes = {};
+            
+            if (keyPlayers.length > 0) {
+                // Key players get 25% more than base time
+                const baseMinutesPerPlayer = totalPlayerMinutes / (availablePlayers.length + (keyPlayers.length * 0.25));
                 
-                // Smart rotation - prioritize key players but ensure everyone plays
-                const usedIndexes = new Set();
+                regularPlayerIds.forEach(id => {
+                    targetMinutes[id] = baseMinutesPerPlayer;
+                });
                 
-                // First, try to include at least one key player if available
-                if (keyPlayers.length > 0 && Math.random() > 0.3) {
-                    const keyPlayer = keyPlayers[i % keyPlayers.length];
-                    onCourt.push(keyPlayer);
-                }
+                keyPlayerIds.forEach(id => {
+                    targetMinutes[id] = baseMinutesPerPlayer * 1.25; // 25% more
+                });
+            } else {
+                // Equal time for everyone
+                const equalMinutes = totalPlayerMinutes / availablePlayers.length;
+                availablePlayers.forEach(player => {
+                    targetMinutes[player.id] = equalMinutes;
+                });
+            }
+            
+            console.log('Target minutes:', targetMinutes);
+            
+            // Generate both halves
+            generateHalf(0, 20, periodsPerHalf, actualPeriodLength, 'firstHalf', targetMinutes);
+            generateHalf(20, 40, periodsPerHalf, actualPeriodLength, 'secondHalf', targetMinutes);
+            
+            console.log('Final playing times:', rotations.playingTimes);
+        }
+        
+        function generateHalf(startMinute, endMinute, periods, periodLength, halfName, targetMinutes) {
+            for (let i = 0; i < periods; i++) {
+                const startTime = startMinute + (i * periodLength);
+                const endTime = Math.min(endMinute, startTime + periodLength);
                 
-                // Fill remaining spots with rotation
-                while (onCourt.length < 5) {
-                    const playerIndex = (i * 2 + onCourt.length) % totalPlayers;
-                    const player = availablePlayers[playerIndex];
-                    
-                    // Avoid duplicates on court
-                    if (!onCourt.includes(player)) {
-                        onCourt.push(player);
-                    } else {
-                        // If duplicate, try next player
-                        const nextIndex = (playerIndex + 1) % totalPlayers;
-                        const nextPlayer = availablePlayers[nextIndex];
-                        if (!onCourt.includes(nextPlayer)) {
-                            onCourt.push(nextPlayer);
-                        }
+                // Select 5 players based on who needs more time to reach their target
+                const playersWithDeficit = availablePlayers.map(player => ({
+                    ...player,
+                    deficit: targetMinutes[player.id] - (rotations.playingTimes[player.id] || 0),
+                    isKey: keyPlayers.some(kp => kp.id === player.id)
+                })).sort((a, b) => {
+                    // Prioritize players with highest deficit, with slight preference for key players
+                    if (Math.abs(a.deficit - b.deficit) < 1) {
+                        return b.isKey - a.isKey; // Key players break ties
                     }
-                }
+                    return b.deficit - a.deficit; // Highest deficit first
+                });
                 
-                rotations.firstHalf.push({
+                const onCourt = playersWithDeficit.slice(0, 5);
+                
+                rotations[halfName].push({
                     start: startTime.toFixed(1),
                     end: endTime.toFixed(1),
-                    players: onCourt.slice(0, 5) // Ensure exactly 5 players
+                    players: onCourt
                 });
                 
                 // Add playing time
                 const actualTimeInPeriod = endTime - startTime;
-                onCourt.slice(0, 5).forEach(player => {
-                    rotations.playingTimes[player.id] += actualTimeInPeriod;
+                onCourt.forEach(player => {
+                    rotations.playingTimes[player.id] = (rotations.playingTimes[player.id] || 0) + actualTimeInPeriod;
                 });
             }
-            
-            // Generate second half with similar logic but different starting positions
-            for (let i = 0; i < periodsPerHalf; i++) {
-                const startTime = 20 + i * actualPeriodLength;
-                const endTime = Math.min(40, 20 + (i + 1) * actualPeriodLength);
-                const onCourt = [];
-                
-                // Shift starting positions for second half
-                const offset = Math.floor(totalPlayers / 2);
-                
-                // Include key players more often in second half too
-                if (keyPlayers.length > 0 && Math.random() > 0.4) {
-                    const keyPlayer = keyPlayers[(i + 1) % keyPlayers.length];
-                    onCourt.push(keyPlayer);
-                }
-                
-                // Fill remaining spots
-                while (onCourt.length < 5) {
-                    const playerIndex = (offset + i * 2 + onCourt.length) % totalPlayers;
-                    const player = availablePlayers[playerIndex];
-                    
-                    if (!onCourt.includes(player)) {
-                        onCourt.push(player);
-                    } else {
-                        const nextIndex = (playerIndex + 1) % totalPlayers;
-                        const nextPlayer = availablePlayers[nextIndex];
-                        if (!onCourt.includes(nextPlayer)) {
-                            onCourt.push(nextPlayer);
-                        }
-                    }
-                }
-                
-                rotations.secondHalf.push({
-                    start: startTime.toFixed(1),
-                    end: endTime.toFixed(1),
-                    players: onCourt.slice(0, 5)
-                });
-                
-                // Add playing time
-                const actualTimeInPeriod = endTime - startTime;
-                onCourt.slice(0, 5).forEach(player => {
-                    rotations.playingTimes[player.id] += actualTimeInPeriod;
-                });
-            }
-            
-            console.log('Rotations generated:', rotations);
         }
 
         function displayRotations() {
@@ -471,7 +363,7 @@
             const firstHalfDiv = document.getElementById('first-half-display');
             firstHalfDiv.innerHTML = '';
             rotations.firstHalf.forEach(period => {
-                const benchPlayers = availablePlayers.filter(p => !period.players.includes(p));
+                const benchPlayers = availablePlayers.filter(p => !period.players.some(op => op.id === p.id));
                 const div = document.createElement('div');
                 div.className = 'rotation-period';
                 div.innerHTML = `
@@ -488,7 +380,7 @@
             const secondHalfDiv = document.getElementById('second-half-display');
             secondHalfDiv.innerHTML = '';
             rotations.secondHalf.forEach(period => {
-                const benchPlayers = availablePlayers.filter(p => !period.players.includes(p));
+                const benchPlayers = availablePlayers.filter(p => !period.players.some(op => op.id === p.id));
                 const div = document.createElement('div');
                 div.className = 'rotation-period';
                 div.innerHTML = `
@@ -504,14 +396,20 @@
             // Display playing times
             const timeSummary = document.getElementById('time-summary');
             timeSummary.innerHTML = '';
-            availablePlayers.forEach(player => {
+            
+            // Sort by playing time (descending) to show key players first
+            const sortedPlayers = [...availablePlayers].sort((a, b) => 
+                (rotations.playingTimes[b.id] || 0) - (rotations.playingTimes[a.id] || 0)
+            );
+            
+            sortedPlayers.forEach(player => {
                 const div = document.createElement('div');
                 div.className = 'player-time';
                 const isKeyPlayer = keyPlayers.some(kp => kp.id === player.id);
                 const keyPlayerIndicator = isKeyPlayer ? ' ⭐' : '';
                 div.innerHTML = `
                     <span>${player.name}${keyPlayerIndicator}</span>
-                    <span style="font-weight: 600; color: #FF6B35;">${rotations.playingTimes[player.id].toFixed(1)} min</span>
+                    <span style="font-weight: 600; color: #FF6B35;">${(rotations.playingTimes[player.id] || 0).toFixed(1)} min</span>
                 `;
                 timeSummary.appendChild(div);
             });
@@ -558,19 +456,19 @@
         }
 
         function endGame() {
-            if (confirm('End the game and return to roster?')) {
+            if (confirm('End the game and return to players?')) {
                 isPlaying = false;
                 clearInterval(timerInterval);
                 gameTimer = 0;
                 document.getElementById('game-timer').textContent = '00:00';
                 document.getElementById('play-pause').textContent = '▶️ Start';
-                showSection('roster');
+                showSection('players');
             }
         }
 
         // Initialize app
         console.log('App initialized');
-        showSection('roster');
+        showSection('players');
     </script>
 </body>
 </html>
