@@ -317,11 +317,15 @@
             const firstHalfDiv = document.getElementById('first-half-display');
             firstHalfDiv.innerHTML = '';
             rotations.firstHalf.forEach(period => {
+                const benchPlayers = availablePlayers.filter(p => !period.players.includes(p));
                 const div = document.createElement('div');
                 div.className = 'rotation-period';
                 div.innerHTML = `
                     <strong>${period.start}-${period.end} minutes</strong><br>
-                    ${period.players.map(p => `<span class="player-badge">${p.name}</span>`).join(' ')}
+                    <div style="margin: 8px 0;"><strong>On Court:</strong><br>
+                    ${period.players.map(p => `<span class="player-badge">${p.name}</span>`).join(' ')}</div>
+                    ${benchPlayers.length > 0 ? `<div><strong>Bench:</strong><br>
+                    ${benchPlayers.map(p => `<span class="player-badge bench">${p.name}</span>`).join(' ')}</div>` : ''}
                 `;
                 firstHalfDiv.appendChild(div);
             });
@@ -330,11 +334,15 @@
             const secondHalfDiv = document.getElementById('second-half-display');
             secondHalfDiv.innerHTML = '';
             rotations.secondHalf.forEach(period => {
+                const benchPlayers = availablePlayers.filter(p => !period.players.includes(p));
                 const div = document.createElement('div');
                 div.className = 'rotation-period';
                 div.innerHTML = `
                     <strong>${period.start}-${period.end} minutes</strong><br>
-                    ${period.players.map(p => `<span class="player-badge">${p.name}</span>`).join(' ')}
+                    <div style="margin: 8px 0;"><strong>On Court:</strong><br>
+                    ${period.players.map(p => `<span class="player-badge">${p.name}</span>`).join(' ')}</div>
+                    ${benchPlayers.length > 0 ? `<div><strong>Bench:</strong><br>
+                    ${benchPlayers.map(p => `<span class="player-badge bench">${p.name}</span>`).join(' ')}</div>` : ''}
                 `;
                 secondHalfDiv.appendChild(div);
             });
