@@ -330,24 +330,31 @@
                 const isGameEnd = (halfName === 'secondHalf' && isLastPeriod);
                 
                 let onCourt = [];
+                const usedPlayerIds = new Set(); // Track used players to prevent duplicates
                 
                 if (isGameEnd && keyPlayers.length > 0) {
                     // For the final period, ensure ALL key players are on court
                     console.log('Final period - ensuring key players are on court');
-                    onCourt = [...keyPlayers];
+                    keyPlayers.forEach(player => {
+                        if (!usedPlayerIds.has(player.id) && onCourt.length < 5) {
+                            onCourt.push(player);
+                            usedPlayerIds.add(player.id);
+                        }
+                    });
                     
                     // Fill remaining spots with other players based on deficit
-                    const remainingPlayers = availablePlayers.filter(p => !keyPlayers.some(kp => kp.id === p.id));
-                    const remainingSpotsNeeded = 5 - onCourt.length;
+                    const remainingPlayers = availablePlayers.filter(p => !usedPlayerIds.has(p.id));
+                    const sortedRemaining = remainingPlayers.map(player => ({
+                        ...player,
+                        deficit: targetMinutes[player.id] - (rotations.playingTimes[player.id] || 0)
+                    })).sort((a, b) => b.deficit - a.deficit);
                     
-                    if (remainingSpotsNeeded > 0) {
-                        const sortedRemaining = remainingPlayers.map(player => ({
-                            ...player,
-                            deficit: targetMinutes[player.id] - (rotations.playingTimes[player.id] || 0)
-                        })).sort((a, b) => b.deficit - a.deficit);
-                        
-                        onCourt = onCourt.concat(sortedRemaining.slice(0, remainingSpotsNeeded));
-                    }
+                    sortedRemaining.forEach(player => {
+                        if (!usedPlayerIds.has(player.id) && onCourt.length < 5) {
+                            onCourt.push(player);
+                            usedPlayerIds.add(player.id);
+                        }
+                    });
                 } else {
                     // Regular period selection based on deficit and key player priority
                     const playersWithDeficit = availablePlayers.map(player => ({
@@ -369,7 +376,39 @@
                         return b.deficit - a.deficit; // Highest deficit first
                     });
                     
-                    onCourt = playersWithDeficit.slice(0, 5);
+                    // Select exactly 5 unique players
+                    playersWithDeficit.forEach(player => {
+                        if (!usedPlayerIds.has(player.id) && onCourt.length < 5) {
+                            onCourt.push(player);
+                            usedPlayerIds.add(player.id);
+                        }
+                    });
+                }
+                
+                // Ensure we have exactly the right number of players (no more, no less)
+                if (onCourt.length > 5) {
+                    console.warn(`Period ${i+1}: Too many players selected (${onCourt.length}), trimming to 5`);
+                    onCourt = onCourt.slice(0, 5);
+                }
+                
+                if (onCourt.length < Math.min(5, availablePlayers.length)) {
+                    console.warn(`Period ${i+1}: Not enough players selected (${onCourt.length}), this shouldn't happen`);
+                }
+                
+                // Verify no duplicates
+                const playerIds = onCourt.map(p => p.id);
+                const uniqueIds = new Set(playerIds);
+                if (playerIds.length !== uniqueIds.size) {
+                    console.error(`Period ${i+1}: Duplicate players detected!`, onCourt.map(p => p.name));
+                    // Remove duplicates as failsafe
+                    const seenIds = new Set();
+                    onCourt = onCourt.filter(player => {
+                        if (seenIds.has(player.id)) {
+                            return false;
+                        }
+                        seenIds.add(player.id);
+                        return true;
+                    });
                 }
                 
                 rotations[halfName].push({
