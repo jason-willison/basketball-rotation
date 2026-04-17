@@ -52,6 +52,16 @@
                 <h2>Available Players</h2>
                 <p class="help-text">Enter the players who are available for today's game:</p>
                 
+                <!-- Saved Teams Section -->
+                <div id="saved-teams-section" style="margin-bottom: 20px; display: none;">
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <select id="saved-teams" class="player-input" style="flex: 1; margin-bottom: 0;">
+                            <option value="">Select a saved team...</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="loadTeam()" style="width: auto; padding: 12px; margin-bottom: 0; font-size: 0.9rem;">Load</button>
+                    </div>
+                </div>
+                
                 <input type="text" class="player-input" placeholder="Player 1 name" id="player1">
                 <input type="text" class="player-input" placeholder="Player 2 name" id="player2">
                 <input type="text" class="player-input" placeholder="Player 3 name" id="player3">
@@ -63,8 +73,23 @@
                 <input type="text" class="player-input" placeholder="Player 9 name (optional)" id="player9">
                 <input type="text" class="player-input" placeholder="Player 10 name (optional)" id="player10">
                 
-                <button class="btn btn-primary" onclick="saveAvailablePlayers()">Save Available Players</button>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn btn-primary" onclick="saveAvailablePlayers()" style="flex: 2;">Continue</button>
+                    <button class="btn btn-secondary" onclick="showSaveTeamDialog()" style="flex: 1; font-size: 0.9rem;">Save Team</button>
+                </div>
             </section>
+            
+            <!-- Save Team Dialog -->
+            <div id="save-team-dialog" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+                <div style="background: white; padding: 30px; border-radius: 12px; max-width: 350px; width: 90%; text-align: center;">
+                    <h3 style="color: #FF6B35; margin-bottom: 15px;">Save Team</h3>
+                    <input type="text" id="team-name-input" placeholder="Enter team name (e.g., Tigers U12)" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; margin-bottom: 20px; font-size: 16px;">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="closeSaveTeamDialog()" style="flex: 1; margin-bottom: 0;">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveCurrentTeam()" style="flex: 1; margin-bottom: 0;">Save</button>
+                    </div>
+                </div>
+            </div>
 
             <!-- Key Players Section -->
             <section id="keyplayers" class="section">
@@ -156,6 +181,7 @@
         let gameTimer = 0;
         let isPlaying = false;
         let timerInterval = null;
+        let savedTeams = {}; // Store saved teams
 
         function showSection(section) {
             console.log(`Showing section: ${section}`);
@@ -563,8 +589,150 @@
             }
         }
 
+        // Team Management Functions
+        function loadSavedTeams() {
+            const saved = localStorage.getItem('basketballTeams');
+            if (saved) {
+                savedTeams = JSON.parse(saved);
+                updateTeamDropdown();
+            }
+        }
+        
+        function updateTeamDropdown() {
+            const dropdown = document.getElementById('saved-teams');
+            const section = document.getElementById('saved-teams-section');
+            
+            dropdown.innerHTML = '<option value="">Select a saved team...</option>';
+            
+            const teamCount = Object.keys(savedTeams).length;
+            if (teamCount > 0) {
+                section.style.display = 'block';
+                Object.keys(savedTeams).forEach(teamId => {
+                    const team = savedTeams[teamId];
+                    const option = document.createElement('option');
+                    option.value = teamId;
+                    option.textContent = `${team.name} (${team.players.length} players)`;
+                    dropdown.appendChild(option);
+                });
+            } else {
+                section.style.display = 'none';
+            }
+        }
+        
+        function showSaveTeamDialog() {
+            // Check if there are players entered
+            const playerNames = [];
+            for (let i = 1; i <= 10; i++) {
+                const input = document.getElementById(`player${i}`);
+                if (input.value.trim()) {
+                    playerNames.push(input.value.trim());
+                }
+            }
+            
+            if (playerNames.length < 4) {
+                alert('Enter at least 4 players before saving the team.');
+                return;
+            }
+            
+            document.getElementById('save-team-dialog').style.display = 'flex';
+            document.getElementById('team-name-input').focus();
+        }
+        
+        function closeSaveTeamDialog() {
+            document.getElementById('save-team-dialog').style.display = 'none';
+            document.getElementById('team-name-input').value = '';
+        }
+        
+        function saveCurrentTeam() {
+            const teamName = document.getElementById('team-name-input').value.trim();
+            if (!teamName) {
+                alert('Please enter a team name.');
+                return;
+            }
+            
+            // Collect current players
+            const players = [];
+            for (let i = 1; i <= 10; i++) {
+                const input = document.getElementById(`player${i}`);
+                if (input.value.trim()) {
+                    players.push({
+                        id: i,
+                        name: input.value.trim()
+                    });
+                }
+            }
+            
+            if (players.length < 4) {
+                alert('Need at least 4 players to save a team.');
+                return;
+            }
+            
+            // Generate team ID
+            const teamId = 'team-' + Date.now();
+            
+            // Save team
+            savedTeams[teamId] = {
+                id: teamId,
+                name: teamName,
+                players: players,
+                created: new Date().toISOString().split('T')[0] // YYYY-MM-DD
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('basketballTeams', JSON.stringify(savedTeams));
+            
+            // Update UI
+            updateTeamDropdown();
+            closeSaveTeamDialog();
+            
+            alert(`Team "${teamName}" saved successfully! You can now load it anytime.`);
+        }
+        
+        function loadTeam() {
+            const dropdown = document.getElementById('saved-teams');
+            const teamId = dropdown.value;
+            
+            if (!teamId) {
+                alert('Please select a team to load.');
+                return;
+            }
+            
+            const team = savedTeams[teamId];
+            if (!team) {
+                alert('Team not found.');
+                return;
+            }
+            
+            // Clear current inputs
+            for (let i = 1; i <= 10; i++) {
+                document.getElementById(`player${i}`).value = '';
+            }
+            
+            // Load team players
+            team.players.forEach((player, index) => {
+                const input = document.getElementById(`player${index + 1}`);
+                if (input) {
+                    input.value = player.name;
+                }
+            });
+            
+            alert(`Team "${team.name}" loaded successfully!`);
+        }
+        
+        function deleteTeam(teamId) {
+            const team = savedTeams[teamId];
+            if (!team) return;
+            
+            if (confirm(`Delete team "${team.name}"? This cannot be undone.`)) {
+                delete savedTeams[teamId];
+                localStorage.setItem('basketballTeams', JSON.stringify(savedTeams));
+                updateTeamDropdown();
+            }
+        }
+
         // Initialize app
         console.log('App initialized');
+        loadSavedTeams();
         showSection('players');
     </script>
 </body>
