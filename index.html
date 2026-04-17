@@ -4,52 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Basketball Rotation Manager</title>
-    <meta name="theme-color" content="#FF6B35">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Basketball Coach">
-    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fa; color: #2c2c2c; }
+        .container { max-width: 400px; margin: 0 auto; background: white; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #FF6B35, #2E8B57); color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; padding-bottom: 80px; }
+        .section { display: none; }
+        .section.active { display: block; }
+        h1 { font-size: 1.5rem; margin-bottom: 5px; }
+        h2 { color: #FF6B35; margin-bottom: 10px; }
+        .help-text { color: #666; font-size: 0.9rem; margin-bottom: 20px; }
+        .player-input { width: 100%; padding: 12px; margin-bottom: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; }
+        .player-input:focus { outline: none; border-color: #FF6B35; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+        .btn-primary { background: #FF6B35; color: white; }
+        .btn-secondary { background: #e0e0e0; color: #2c2c2c; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .player-checkbox { display: flex; align-items: center; padding: 16px; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; margin-bottom: 12px; transition: all 0.3s ease; }
+        .player-checkbox.selected { background: #e8f5e8; border-color: #28a745; }
+        .player-checkbox input { margin-right: 12px; transform: scale(1.3); }
+        .selected-count { text-align: center; margin: 20px 0; font-size: 1.1rem; font-weight: 600; color: #FF6B35; }
+        .rotation-display { padding: 16px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px; }
+        .rotation-period { margin-bottom: 15px; padding: 12px; background: white; border-radius: 6px; border-left: 4px solid #FF6B35; }
+        .player-badge { background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; margin: 2px; display: inline-block; }
+        .player-badge.bench { background: #666; }
+        .time-summary { display: flex; flex-direction: column; gap: 8px; }
+        .player-time { display: flex; justify-content: space-between; padding: 8px 12px; background: #f8f9fa; border-radius: 6px; }
+        .timer-display { text-align: center; padding: 30px; background: linear-gradient(135deg, #FF6B35, #2E8B57); border-radius: 12px; color: white; margin: 20px 0; }
+        .timer-display .time { font-size: 3rem; font-weight: bold; margin-bottom: 10px; }
+        .nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); max-width: 400px; width: 100%; background: white; border-top: 1px solid #e0e0e0; display: flex; }
+        .nav-btn { flex: 1; padding: 16px 8px; border: none; background: none; color: #666; font-size: 0.85rem; cursor: pointer; }
+        .nav-btn.active { color: #FF6B35; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
+    <div class="container">
+        <div class="header">
             <h1>🏀 Basketball Rotation Manager</h1>
-            <p class="subtitle">Fair substitutions for youth basketball</p>
-        </header>
+            <p>Fair substitutions for youth basketball</p>
+        </div>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            
-            <!-- Step 1: Team Roster -->
-            <section id="roster-section" class="section active">
+        <div class="content">
+            <!-- Team Roster Section -->
+            <section id="roster" class="section active">
                 <h2>Team Roster</h2>
                 <p class="help-text">Enter your team's player names:</p>
                 
-                <div class="player-inputs">
-                    <input type="text" class="player-input" placeholder="Player 1 name" data-player="1">
-                    <input type="text" class="player-input" placeholder="Player 2 name" data-player="2">
-                    <input type="text" class="player-input" placeholder="Player 3 name" data-player="3">
-                    <input type="text" class="player-input" placeholder="Player 4 name" data-player="4">
-                    <input type="text" class="player-input" placeholder="Player 5 name" data-player="5">
-                    <input type="text" class="player-input" placeholder="Player 6 name" data-player="6">
-                    <input type="text" class="player-input" placeholder="Player 7 name" data-player="7">
-                    <input type="text" class="player-input" placeholder="Player 8 name" data-player="8">
-                    <input type="text" class="player-input" placeholder="Player 9 name (optional)" data-player="9">
-                    <input type="text" class="player-input" placeholder="Player 10 name (optional)" data-player="10">
-                </div>
+                <input type="text" class="player-input" placeholder="Player 1 name" id="player1">
+                <input type="text" class="player-input" placeholder="Player 2 name" id="player2">
+                <input type="text" class="player-input" placeholder="Player 3 name" id="player3">
+                <input type="text" class="player-input" placeholder="Player 4 name" id="player4">
+                <input type="text" class="player-input" placeholder="Player 5 name" id="player5">
+                <input type="text" class="player-input" placeholder="Player 6 name" id="player6">
+                <input type="text" class="player-input" placeholder="Player 7 name" id="player7">
+                <input type="text" class="player-input" placeholder="Player 8 name" id="player8">
+                <input type="text" class="player-input" placeholder="Player 9 name (optional)" id="player9">
+                <input type="text" class="player-input" placeholder="Player 10 name (optional)" id="player10">
                 
-                <button class="btn-primary" onclick="saveRoster()">Save Roster</button>
+                <button class="btn btn-primary" onclick="saveRoster()">Save Roster</button>
             </section>
 
-            <!-- Step 2: Available Players -->
-            <section id="availability-section" class="section">
+            <!-- Available Players Section -->
+            <section id="available" class="section">
                 <h2>Game Day - Available Players</h2>
                 <p class="help-text">Select which players showed up today:</p>
                 
-                <div id="player-checkboxes" class="player-checkboxes">
+                <div id="player-checkboxes">
                     <!-- Dynamically populated -->
                 </div>
                 
@@ -57,87 +78,335 @@
                     <span id="selected-count">0</span> players selected
                 </div>
                 
-                <button class="btn-primary" onclick="calculateRotations()">Calculate Fair Rotations</button>
+                <button id="calc-btn" class="btn btn-primary" onclick="calculateRotations()" disabled>Calculate Fair Rotations</button>
             </section>
 
-            <!-- Step 3: Rotation Schedule -->
-            <section id="rotation-section" class="section">
+            <!-- Rotation Schedule Section -->
+            <section id="rotation" class="section">
                 <h2>Rotation Schedule</h2>
                 <p class="help-text">2 halves × 20 minutes = 40 minutes total</p>
                 
-                <div class="game-info">
-                    <div class="half-info">
-                        <h3>1st Half (0-20 min)</h3>
-                        <div id="first-half-rotation" class="rotation-display">
-                            <!-- Dynamically populated -->
-                        </div>
-                    </div>
-                    
-                    <div class="half-info">
-                        <h3>2nd Half (20-40 min)</h3>
-                        <div id="second-half-rotation" class="rotation-display">
-                            <!-- Dynamically populated -->
-                        </div>
+                <div class="rotation-display">
+                    <h3>1st Half (0-20 min)</h3>
+                    <div id="first-half-display">
+                        <!-- Populated by JavaScript -->
                     </div>
                 </div>
                 
-                <div class="playing-time-summary">
-                    <h3>Playing Time Summary</h3>
-                    <div id="time-summary" class="time-summary">
-                        <!-- Dynamically populated -->
+                <div class="rotation-display">
+                    <h3>2nd Half (20-40 min)</h3>
+                    <div id="second-half-display">
+                        <!-- Populated by JavaScript -->
                     </div>
                 </div>
                 
-                <div class="action-buttons">
-                    <button class="btn-secondary" onclick="backToAvailability()">Back to Player Selection</button>
-                    <button class="btn-primary" onclick="startGameTimer()">Start Game Timer</button>
+                <h3>Playing Time Summary</h3>
+                <div id="time-summary" class="time-summary">
+                    <!-- Populated by JavaScript -->
                 </div>
+                
+                <button class="btn btn-secondary" onclick="showSection('available')">Back to Player Selection</button>
+                <button class="btn btn-primary" onclick="showSection('timer')">Start Game Timer</button>
             </section>
 
-            <!-- Step 4: Game Timer -->
-            <section id="timer-section" class="section">
+            <!-- Game Timer Section -->
+            <section id="timer" class="section">
                 <h2>Game In Progress</h2>
-                
                 <div class="timer-display">
-                    <div class="current-time">
+                    <div class="time">
                         <span id="game-timer">00:00</span>
                     </div>
-                    <div class="current-half">
+                    <div>
                         <span id="current-half">1st Half</span>
                     </div>
                 </div>
                 
-                <div class="on-court-display">
+                <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 20px 0;">
                     <h3>Currently On Court</h3>
-                    <div id="current-players" class="current-players">
-                        <!-- Dynamically populated -->
-                    </div>
+                    <div id="current-players">Game not started</div>
                 </div>
                 
-                <div class="next-sub">
-                    <h3>Next Substitution</h3>
-                    <div id="next-substitution" class="next-sub-info">
-                        <!-- Dynamically populated -->
-                    </div>
-                </div>
-                
-                <div class="timer-controls">
-                    <button id="play-pause-btn" class="btn-primary" onclick="toggleTimer()">⏸️ Pause</button>
-                    <button class="btn-secondary" onclick="endGame()">End Game</button>
-                </div>
+                <button id="play-pause" class="btn btn-primary" onclick="toggleTimer()">▶️ Start</button>
+                <button class="btn btn-secondary" onclick="endGame()">End Game</button>
             </section>
-            
-        </main>
+        </div>
 
-        <!-- Navigation -->
-        <nav class="bottom-nav">
-            <button class="nav-btn" onclick="showSection('roster')">Roster</button>
-            <button class="nav-btn" onclick="showSection('availability')">Available</button>
+        <!-- Bottom Navigation -->
+        <div class="nav">
+            <button class="nav-btn active" onclick="showSection('roster')">Roster</button>
+            <button class="nav-btn" onclick="showSection('available')">Available</button>
             <button class="nav-btn" onclick="showSection('rotation')">Rotations</button>
-            <button class="nav-btn" onclick="showSection('timer')">Game</button>
-        </nav>
+            <button class="nav-btn" onclick="showSection('timer')">Timer</button>
+        </div>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        let players = [];
+        let availablePlayers = [];
+        let rotations = {};
+        let gameTimer = 0;
+        let isPlaying = false;
+        let timerInterval = null;
+
+        function showSection(section) {
+            console.log(`Showing section: ${section}`);
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(section).classList.add('active');
+            document.querySelector(`[onclick="showSection('${section}')"]`).classList.add('active');
+        }
+
+        function saveRoster() {
+            console.log('Saving roster...');
+            players = [];
+            for (let i = 1; i <= 10; i++) {
+                const input = document.getElementById(`player${i}`);
+                if (input.value.trim()) {
+                    players.push({
+                        id: i,
+                        name: input.value.trim(),
+                        available: false
+                    });
+                }
+            }
+            
+            console.log('Players saved:', players);
+            
+            if (players.length < 5) {
+                alert('You need at least 5 players for a basketball team!');
+                return;
+            }
+            
+            populatePlayerCheckboxes();
+            showSection('available');
+        }
+
+        function populatePlayerCheckboxes() {
+            console.log('Populating checkboxes...');
+            const container = document.getElementById('player-checkboxes');
+            container.innerHTML = '';
+            
+            players.forEach(player => {
+                const div = document.createElement('div');
+                div.className = 'player-checkbox';
+                div.innerHTML = `
+                    <input type="checkbox" id="check-${player.id}" data-player-id="${player.id}">
+                    <label for="check-${player.id}">${player.name}</label>
+                `;
+                
+                const checkbox = div.querySelector('input');
+                checkbox.addEventListener('change', function() {
+                    console.log(`Checkbox changed for ${player.name}: ${this.checked}`);
+                    div.classList.toggle('selected', this.checked);
+                    player.available = this.checked;
+                    updateSelectedCount();
+                });
+                
+                container.appendChild(div);
+            });
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const availableCount = players.filter(p => p.available).length;
+            console.log(`Available players: ${availableCount}`);
+            
+            document.getElementById('selected-count').textContent = availableCount;
+            
+            const calcBtn = document.getElementById('calc-btn');
+            calcBtn.disabled = availableCount < 5;
+            
+            if (availableCount >= 5) {
+                calcBtn.classList.remove('btn-disabled');
+            } else {
+                calcBtn.classList.add('btn-disabled');
+            }
+        }
+
+        function calculateRotations() {
+            console.log('Calculating rotations...');
+            
+            availablePlayers = players.filter(p => p.available);
+            console.log('Available players for rotation:', availablePlayers);
+            
+            if (availablePlayers.length < 5) {
+                alert('You need at least 5 available players!');
+                return;
+            }
+
+            generateRotations();
+            displayRotations();
+            showSection('rotation');
+        }
+
+        function generateRotations() {
+            console.log('Generating rotation schedule...');
+            const totalPlayers = availablePlayers.length;
+            
+            // Simple rotation: divide into 4-minute periods for each half
+            const periodsPerHalf = Math.max(2, Math.ceil(totalPlayers / 5));
+            const periodLength = 20 / periodsPerHalf;
+            
+            rotations = {
+                firstHalf: [],
+                secondHalf: [],
+                playingTimes: {}
+            };
+            
+            // Initialize playing times
+            availablePlayers.forEach(player => {
+                rotations.playingTimes[player.id] = 0;
+            });
+            
+            // Generate first half
+            for (let i = 0; i < periodsPerHalf; i++) {
+                const startTime = i * periodLength;
+                const endTime = (i + 1) * periodLength;
+                const onCourt = [];
+                
+                // Simple rotation - take 5 consecutive players, cycling through
+                for (let j = 0; j < 5; j++) {
+                    const playerIndex = (i * 2 + j) % totalPlayers;
+                    onCourt.push(availablePlayers[playerIndex]);
+                }
+                
+                rotations.firstHalf.push({
+                    start: startTime.toFixed(1),
+                    end: endTime.toFixed(1),
+                    players: onCourt
+                });
+                
+                // Add playing time
+                onCourt.forEach(player => {
+                    rotations.playingTimes[player.id] += periodLength;
+                });
+            }
+            
+            // Generate second half (shift starting positions)
+            for (let i = 0; i < periodsPerHalf; i++) {
+                const startTime = 20 + i * periodLength;
+                const endTime = 20 + (i + 1) * periodLength;
+                const onCourt = [];
+                
+                // Shift by half the team to give different players more time
+                for (let j = 0; j < 5; j++) {
+                    const playerIndex = (periodsPerHalf * 2 + i * 2 + j) % totalPlayers;
+                    onCourt.push(availablePlayers[playerIndex]);
+                }
+                
+                rotations.secondHalf.push({
+                    start: startTime.toFixed(1),
+                    end: endTime.toFixed(1),
+                    players: onCourt
+                });
+                
+                // Add playing time
+                onCourt.forEach(player => {
+                    rotations.playingTimes[player.id] += periodLength;
+                });
+            }
+            
+            console.log('Rotations generated:', rotations);
+        }
+
+        function displayRotations() {
+            console.log('Displaying rotations...');
+            
+            // Display first half
+            const firstHalfDiv = document.getElementById('first-half-display');
+            firstHalfDiv.innerHTML = '';
+            rotations.firstHalf.forEach(period => {
+                const div = document.createElement('div');
+                div.className = 'rotation-period';
+                div.innerHTML = `
+                    <strong>${period.start}-${period.end} minutes</strong><br>
+                    ${period.players.map(p => `<span class="player-badge">${p.name}</span>`).join(' ')}
+                `;
+                firstHalfDiv.appendChild(div);
+            });
+            
+            // Display second half
+            const secondHalfDiv = document.getElementById('second-half-display');
+            secondHalfDiv.innerHTML = '';
+            rotations.secondHalf.forEach(period => {
+                const div = document.createElement('div');
+                div.className = 'rotation-period';
+                div.innerHTML = `
+                    <strong>${period.start}-${period.end} minutes</strong><br>
+                    ${period.players.map(p => `<span class="player-badge">${p.name}</span>`).join(' ')}
+                `;
+                secondHalfDiv.appendChild(div);
+            });
+            
+            // Display playing times
+            const timeSummary = document.getElementById('time-summary');
+            timeSummary.innerHTML = '';
+            availablePlayers.forEach(player => {
+                const div = document.createElement('div');
+                div.className = 'player-time';
+                div.innerHTML = `
+                    <span>${player.name}</span>
+                    <span style="font-weight: 600; color: #FF6B35;">${rotations.playingTimes[player.id].toFixed(1)} min</span>
+                `;
+                timeSummary.appendChild(div);
+            });
+        }
+
+        function toggleTimer() {
+            isPlaying = !isPlaying;
+            const button = document.getElementById('play-pause');
+            
+            if (isPlaying) {
+                button.textContent = '⏸️ Pause';
+                timerInterval = setInterval(() => {
+                    gameTimer++;
+                    updateTimerDisplay();
+                }, 1000);
+            } else {
+                button.textContent = '▶️ Resume';
+                clearInterval(timerInterval);
+            }
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(gameTimer / 60);
+            const seconds = gameTimer % 60;
+            document.getElementById('game-timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('current-half').textContent = 
+                gameTimer < 1200 ? '1st Half' : '2nd Half';
+            
+            // Show current players
+            const currentTime = gameTimer / 60;
+            const allPeriods = [...rotations.firstHalf, ...rotations.secondHalf];
+            const currentPeriod = allPeriods.find(p => currentTime >= parseFloat(p.start) && currentTime < parseFloat(p.end));
+            
+            const currentPlayersDiv = document.getElementById('current-players');
+            if (currentPeriod) {
+                currentPlayersDiv.innerHTML = currentPeriod.players.map(p => 
+                    `<span class="player-badge">${p.name}</span>`
+                ).join(' ');
+            } else {
+                currentPlayersDiv.innerHTML = 'Between rotations';
+            }
+        }
+
+        function endGame() {
+            if (confirm('End the game and return to roster?')) {
+                isPlaying = false;
+                clearInterval(timerInterval);
+                gameTimer = 0;
+                document.getElementById('game-timer').textContent = '00:00';
+                document.getElementById('play-pause').textContent = '▶️ Start';
+                showSection('roster');
+            }
+        }
+
+        // Initialize app
+        console.log('App initialized');
+        showSection('roster');
+    </script>
 </body>
 </html>
