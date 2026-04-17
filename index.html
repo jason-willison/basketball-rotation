@@ -333,26 +333,13 @@
             
             let targetMinutes = {};
             
-            if (keyPlayers.length > 0) {
-                // Key players get 25% more than base time
-                const baseMinutesPerPlayer = totalPlayerMinutes / (availablePlayers.length + (keyPlayers.length * 0.25));
-                
-                regularPlayerIds.forEach(id => {
-                    targetMinutes[id] = baseMinutesPerPlayer;
-                });
-                
-                keyPlayerIds.forEach(id => {
-                    targetMinutes[id] = baseMinutesPerPlayer * 1.25; // 25% more
-                });
-            } else {
-                // Equal time for everyone
-                const equalMinutes = totalPlayerMinutes / availablePlayers.length;
-                availablePlayers.forEach(player => {
-                    targetMinutes[player.id] = equalMinutes;
-                });
-            }
+            // Equal time for everyone - fair rotation throughout the game
+            const equalMinutes = totalPlayerMinutes / availablePlayers.length;
+            availablePlayers.forEach(player => {
+                targetMinutes[player.id] = equalMinutes;
+            });
             
-            console.log('Target minutes:', targetMinutes);
+            console.log('Target minutes (equal for all):', targetMinutes);
             
             // Generate both halves
             generateHalf(0, 20, periodsPerHalf, actualPeriodLength, 'firstHalf', targetMinutes);
@@ -445,29 +432,21 @@
                         }
                     });
                     
-                    // KEY PLAYER BONUS: Give key players more court time (but they can still sit sometimes)
-                    if (keyPlayers.length > 0) {
+                    // CLUTCH TIME: Ensure key players are on court for final period only
+                    if (keyPlayers.length > 0 && halfName === 'secondHalf' && i === periods - 1) {
+                        console.log('FINAL PERIOD: Ensuring key players are on court for game ending');
+                        
                         keyPlayers.forEach(keyPlayer => {
-                            // Key players get preference, but not guaranteed every period
-                            const keyPlayerChance = 0.8; // 80% chance for key players vs ~71% for others
-                            const shouldIncludeKeyPlayer = Math.random() < keyPlayerChance || 
-                                (halfName === 'secondHalf' && i >= periods - 2); // Always in final periods
-                            
-                            // Don't force key players if they were just on bench (respect consecutive bench rule)
-                            const wasOnBenchLastPeriod = lastPeriodBench.some(p => p.id === keyPlayer.id);
-                            
-                            if (shouldIncludeKeyPlayer && !usedPlayerIds.has(keyPlayer.id)) {
+                            if (!usedPlayerIds.has(keyPlayer.id)) {
                                 if (onCourt.length < 5) {
                                     // Add key player if there's space
                                     onCourt.push(keyPlayer);
                                     usedPlayerIds.add(keyPlayer.id);
-                                    console.log(`Added key player ${keyPlayer.name} (${Math.round(keyPlayerChance*100)}% chance)`);
-                                } else if (!wasOnBenchLastPeriod) {
-                                    // Only replace if key player wasn't on bench last period
-                                    // Replace the non-key player with lowest priority
+                                    console.log(`Added key player ${keyPlayer.name} for final period`);
+                                } else {
+                                    // Replace a non-key player for final period
                                     const replaceableIndex = onCourt.findIndex(p => 
-                                        !keyPlayers.some(kp => kp.id === p.id) && 
-                                        !lastPeriodBench.some(bp => bp.id === p.id)
+                                        !keyPlayers.some(kp => kp.id === p.id)
                                     );
                                     
                                     if (replaceableIndex >= 0) {
@@ -475,11 +454,9 @@
                                         onCourt[replaceableIndex] = keyPlayer;
                                         usedPlayerIds.delete(replacedPlayer.id);
                                         usedPlayerIds.add(keyPlayer.id);
-                                        console.log(`Replaced ${replacedPlayer.name} with key player ${keyPlayer.name} (bonus time)`);
+                                        console.log(`FINAL PERIOD: Replaced ${replacedPlayer.name} with key player ${keyPlayer.name}`);
                                     }
                                 }
-                            } else if (!shouldIncludeKeyPlayer && !wasOnBenchLastPeriod) {
-                                console.log(`Key player ${keyPlayer.name} sitting this period (${Math.round((1-keyPlayerChance)*100)}% chance)`);
                             }
                         });
                     }
