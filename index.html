@@ -277,12 +277,18 @@
             rotations = {
                 firstHalf: [],
                 secondHalf: [],
-                playingTimes: {}
+                playingTimes: {},
+                benchCounts: { // Track how many times each player sits on bench per half
+                    firstHalf: {},
+                    secondHalf: {}
+                }
             };
             
-            // Initialize playing times
+            // Initialize playing times and bench counts
             availablePlayers.forEach(player => {
                 rotations.playingTimes[player.id] = 0;
+                rotations.benchCounts.firstHalf[player.id] = 0;
+                rotations.benchCounts.secondHalf[player.id] = 0;
             });
             
             // Calculate target minutes for each player type
@@ -356,12 +362,16 @@
                         }
                     });
                 } else {
-                    // Regular period selection based on deficit and key player priority
-                    const playersWithDeficit = availablePlayers.map(player => ({
-                        ...player,
-                        deficit: targetMinutes[player.id] - (rotations.playingTimes[player.id] || 0),
-                        isKey: keyPlayers.some(kp => kp.id === player.id)
-                    })).sort((a, b) => {
+                    // Regular period selection based on deficit, key player priority, and bench distribution
+                    const playersWithDeficit = availablePlayers.map(player => {
+                        const benchCount = rotations.benchCounts[halfName][player.id] || 0;
+                        return {
+                            ...player,
+                            deficit: targetMinutes[player.id] - (rotations.playingTimes[player.id] || 0),
+                            benchCount: benchCount,
+                            isKey: keyPlayers.some(kp => kp.id === player.id)
+                        };
+                    }).sort((a, b) => {
                         // For final periods of second half, strongly prioritize key players
                         if (halfName === 'secondHalf' && i >= periods - 2) {
                             if (a.isKey !== b.isKey) {
@@ -369,11 +379,18 @@
                             }
                         }
                         
-                        // Prioritize players with highest deficit, with preference for key players
-                        if (Math.abs(a.deficit - b.deficit) < 1) {
-                            return b.isKey - a.isKey; // Key players break ties
+                        // Primary: Prioritize players with fewer bench appearances in this half
+                        if (a.benchCount !== b.benchCount) {
+                            return a.benchCount - b.benchCount; // Fewer bench times first
                         }
-                        return b.deficit - a.deficit; // Highest deficit first
+                        
+                        // Secondary: Playing time deficit
+                        if (Math.abs(a.deficit - b.deficit) > 1) {
+                            return b.deficit - a.deficit; // Highest deficit first
+                        }
+                        
+                        // Tertiary: Key player preference for ties
+                        return b.isKey - a.isKey;
                     });
                     
                     // Select exactly 5 unique players
@@ -421,6 +438,12 @@
                 const actualTimeInPeriod = endTime - startTime;
                 onCourt.forEach(player => {
                     rotations.playingTimes[player.id] = (rotations.playingTimes[player.id] || 0) + actualTimeInPeriod;
+                });
+                
+                // Track bench appearances for this half
+                const benchPlayers = availablePlayers.filter(p => !onCourt.some(op => op.id === p.id));
+                benchPlayers.forEach(player => {
+                    rotations.benchCounts[halfName][player.id] = (rotations.benchCounts[halfName][player.id] || 0) + 1;
                 });
             }
         }
@@ -476,8 +499,13 @@
                 div.className = 'player-time';
                 const isKeyPlayer = keyPlayers.some(kp => kp.id === player.id);
                 const keyPlayerIndicator = isKeyPlayer ? ' ⭐' : '';
+                const benchCount1st = rotations.benchCounts?.firstHalf[player.id] || 0;
+                const benchCount2nd = rotations.benchCounts?.secondHalf[player.id] || 0;
+                const totalBenchCount = benchCount1st + benchCount2nd;
+                const benchInfo = totalBenchCount > 0 ? ` (${benchCount1st}+${benchCount2nd} bench)` : '';
+                
                 div.innerHTML = `
-                    <span>${player.name}${keyPlayerIndicator}</span>
+                    <span>${player.name}${keyPlayerIndicator}<br><small style="color: #888; font-size: 0.75rem;">${(rotations.playingTimes[player.id] || 0).toFixed(1)} min${benchInfo}</small></span>
                     <span style="font-weight: 600; color: #FF6B35;">${(rotations.playingTimes[player.id] || 0).toFixed(1)} min</span>
                 `;
                 timeSummary.appendChild(div);
