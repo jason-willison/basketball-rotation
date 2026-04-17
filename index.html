@@ -326,21 +326,51 @@
             for (let i = 0; i < periods; i++) {
                 const startTime = startMinute + (i * periodLength);
                 const endTime = Math.min(endMinute, startTime + periodLength);
+                const isLastPeriod = (i === periods - 1);
+                const isGameEnd = (halfName === 'secondHalf' && isLastPeriod);
                 
-                // Select 5 players based on who needs more time to reach their target
-                const playersWithDeficit = availablePlayers.map(player => ({
-                    ...player,
-                    deficit: targetMinutes[player.id] - (rotations.playingTimes[player.id] || 0),
-                    isKey: keyPlayers.some(kp => kp.id === player.id)
-                })).sort((a, b) => {
-                    // Prioritize players with highest deficit, with slight preference for key players
-                    if (Math.abs(a.deficit - b.deficit) < 1) {
-                        return b.isKey - a.isKey; // Key players break ties
+                let onCourt = [];
+                
+                if (isGameEnd && keyPlayers.length > 0) {
+                    // For the final period, ensure ALL key players are on court
+                    console.log('Final period - ensuring key players are on court');
+                    onCourt = [...keyPlayers];
+                    
+                    // Fill remaining spots with other players based on deficit
+                    const remainingPlayers = availablePlayers.filter(p => !keyPlayers.some(kp => kp.id === p.id));
+                    const remainingSpotsNeeded = 5 - onCourt.length;
+                    
+                    if (remainingSpotsNeeded > 0) {
+                        const sortedRemaining = remainingPlayers.map(player => ({
+                            ...player,
+                            deficit: targetMinutes[player.id] - (rotations.playingTimes[player.id] || 0)
+                        })).sort((a, b) => b.deficit - a.deficit);
+                        
+                        onCourt = onCourt.concat(sortedRemaining.slice(0, remainingSpotsNeeded));
                     }
-                    return b.deficit - a.deficit; // Highest deficit first
-                });
-                
-                const onCourt = playersWithDeficit.slice(0, 5);
+                } else {
+                    // Regular period selection based on deficit and key player priority
+                    const playersWithDeficit = availablePlayers.map(player => ({
+                        ...player,
+                        deficit: targetMinutes[player.id] - (rotations.playingTimes[player.id] || 0),
+                        isKey: keyPlayers.some(kp => kp.id === player.id)
+                    })).sort((a, b) => {
+                        // For final periods of second half, strongly prioritize key players
+                        if (halfName === 'secondHalf' && i >= periods - 2) {
+                            if (a.isKey !== b.isKey) {
+                                return b.isKey - a.isKey; // Key players first
+                            }
+                        }
+                        
+                        // Prioritize players with highest deficit, with preference for key players
+                        if (Math.abs(a.deficit - b.deficit) < 1) {
+                            return b.isKey - a.isKey; // Key players break ties
+                        }
+                        return b.deficit - a.deficit; // Highest deficit first
+                    });
+                    
+                    onCourt = playersWithDeficit.slice(0, 5);
+                }
                 
                 rotations[halfName].push({
                     start: startTime.toFixed(1),
