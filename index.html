@@ -445,34 +445,43 @@
                         }
                     });
                     
-                    // KEY PLAYER BONUS: Give key players more court time
+                    // KEY PLAYER BONUS: Give key players more court time (but they can still sit sometimes)
                     if (keyPlayers.length > 0) {
-                        // Calculate if key players should be prioritized in this period
-                        const keyPlayerChance = 0.75; // 75% chance key players are included
-                        const shouldPrioritizeKeyPlayers = Math.random() < keyPlayerChance || 
-                            (halfName === 'secondHalf' && i >= periods - 2); // Always in final periods
-                        
-                        if (shouldPrioritizeKeyPlayers) {
-                            // Try to include key players in this period
-                            keyPlayers.forEach(keyPlayer => {
-                                if (!usedPlayerIds.has(keyPlayer.id) && onCourt.length < 5) {
+                        keyPlayers.forEach(keyPlayer => {
+                            // Key players get preference, but not guaranteed every period
+                            const keyPlayerChance = 0.8; // 80% chance for key players vs ~71% for others
+                            const shouldIncludeKeyPlayer = Math.random() < keyPlayerChance || 
+                                (halfName === 'secondHalf' && i >= periods - 2); // Always in final periods
+                            
+                            // Don't force key players if they were just on bench (respect consecutive bench rule)
+                            const wasOnBenchLastPeriod = lastPeriodBench.some(p => p.id === keyPlayer.id);
+                            
+                            if (shouldIncludeKeyPlayer && !usedPlayerIds.has(keyPlayer.id)) {
+                                if (onCourt.length < 5) {
                                     // Add key player if there's space
                                     onCourt.push(keyPlayer);
                                     usedPlayerIds.add(keyPlayer.id);
-                                    console.log(`Added key player ${keyPlayer.name} for extra time`);
-                                } else if (!usedPlayerIds.has(keyPlayer.id) && onCourt.length === 5) {
-                                    // Replace a non-key player with key player
-                                    const nonKeyIndex = onCourt.findIndex(p => !keyPlayers.some(kp => kp.id === p.id));
-                                    if (nonKeyIndex >= 0) {
-                                        const replacedPlayer = onCourt[nonKeyIndex];
-                                        onCourt[nonKeyIndex] = keyPlayer;
+                                    console.log(`Added key player ${keyPlayer.name} (${Math.round(keyPlayerChance*100)}% chance)`);
+                                } else if (!wasOnBenchLastPeriod) {
+                                    // Only replace if key player wasn't on bench last period
+                                    // Replace the non-key player with lowest priority
+                                    const replaceableIndex = onCourt.findIndex(p => 
+                                        !keyPlayers.some(kp => kp.id === p.id) && 
+                                        !lastPeriodBench.some(bp => bp.id === p.id)
+                                    );
+                                    
+                                    if (replaceableIndex >= 0) {
+                                        const replacedPlayer = onCourt[replaceableIndex];
+                                        onCourt[replaceableIndex] = keyPlayer;
                                         usedPlayerIds.delete(replacedPlayer.id);
                                         usedPlayerIds.add(keyPlayer.id);
-                                        console.log(`Replaced ${replacedPlayer.name} with key player ${keyPlayer.name} for extra time`);
+                                        console.log(`Replaced ${replacedPlayer.name} with key player ${keyPlayer.name} (bonus time)`);
                                     }
                                 }
-                            });
-                        }
+                            } else if (!shouldIncludeKeyPlayer && !wasOnBenchLastPeriod) {
+                                console.log(`Key player ${keyPlayer.name} sitting this period (${Math.round((1-keyPlayerChance)*100)}% chance)`);
+                            }
+                        });
                     }
                     
                     const benchPlayers = availablePlayers.filter(p => !onCourt.some(op => op.id === p.id));
