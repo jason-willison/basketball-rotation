@@ -78,6 +78,12 @@
                     <span id="selected-count">0</span> players selected
                 </div>
                 
+                <div style="margin: 20px 0;">
+                    <h3 style="color: #FF6B35; margin-bottom: 8px;">Rotation Minutes</h3>
+                    <p class="help-text" style="margin-bottom: 10px;">How often should players rotate? (Recommended: 7 minutes)</p>
+                    <input type="number" id="rotation-minutes" class="player-input" value="7" min="3" max="10" style="width: 100px; text-align: center; font-size: 18px; font-weight: bold;">
+                </div>
+                
                 <button id="calc-btn" class="btn btn-primary" onclick="calculateRotations()" disabled>Calculate Fair Rotations</button>
             </section>
 
@@ -243,10 +249,15 @@
         function generateRotations() {
             console.log('Generating rotation schedule...');
             const totalPlayers = availablePlayers.length;
+            const rotationMinutes = parseFloat(document.getElementById('rotation-minutes').value) || 7;
             
-            // Simple rotation: divide into 4-minute periods for each half
-            const periodsPerHalf = Math.max(2, Math.ceil(totalPlayers / 5));
-            const periodLength = 20 / periodsPerHalf;
+            console.log(`Using ${rotationMinutes} minute rotations`);
+            
+            // Calculate periods based on rotation minutes
+            const periodsPerHalf = Math.ceil(20 / rotationMinutes);
+            const actualPeriodLength = 20 / periodsPerHalf;
+            
+            console.log(`Periods per half: ${periodsPerHalf}, Period length: ${actualPeriodLength.toFixed(1)} min`);
             
             rotations = {
                 firstHalf: [],
@@ -261,8 +272,8 @@
             
             // Generate first half
             for (let i = 0; i < periodsPerHalf; i++) {
-                const startTime = i * periodLength;
-                const endTime = (i + 1) * periodLength;
+                const startTime = i * actualPeriodLength;
+                const endTime = Math.min(20, (i + 1) * actualPeriodLength);
                 const onCourt = [];
                 
                 // Simple rotation - take 5 consecutive players, cycling through
@@ -278,15 +289,16 @@
                 });
                 
                 // Add playing time
+                const actualTimeInPeriod = endTime - startTime;
                 onCourt.forEach(player => {
-                    rotations.playingTimes[player.id] += periodLength;
+                    rotations.playingTimes[player.id] += actualTimeInPeriod;
                 });
             }
             
             // Generate second half (shift starting positions)
             for (let i = 0; i < periodsPerHalf; i++) {
-                const startTime = 20 + i * periodLength;
-                const endTime = 20 + (i + 1) * periodLength;
+                const startTime = 20 + i * actualPeriodLength;
+                const endTime = Math.min(40, 20 + (i + 1) * actualPeriodLength);
                 const onCourt = [];
                 
                 // Shift by half the team to give different players more time
@@ -302,8 +314,9 @@
                 });
                 
                 // Add playing time
+                const actualTimeInPeriod = endTime - startTime;
                 onCourt.forEach(player => {
-                    rotations.playingTimes[player.id] += periodLength;
+                    rotations.playingTimes[player.id] += actualTimeInPeriod;
                 });
             }
             
