@@ -296,6 +296,13 @@
             
             console.log(`Using ${rotationMinutes} minute rotations with ${keyPlayers.length} key players`);
             
+            // RANDOMIZE: Shuffle available players for variety each game
+            const shuffledPlayers = [...availablePlayers].sort(() => Math.random() - 0.5);
+            console.log('Players shuffled for rotation variety:', shuffledPlayers.map(p => p.name));
+            
+            // Update availablePlayers to use shuffled order
+            availablePlayers = shuffledPlayers;
+            
             // Calculate periods based on rotation minutes
             const periodsPerHalf = Math.ceil(20 / rotationMinutes);
             const actualPeriodLength = 20 / periodsPerHalf;
