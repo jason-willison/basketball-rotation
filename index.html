@@ -395,32 +395,55 @@
                         }
                     });
                 } else {
-                    // SIMPLE GUARANTEED ROTATION: Force different players each period
+                    // NO CONSECUTIVE BENCH: Ensure fair rotation without back-to-back bench time
                     console.log(`Period ${i+1}: Selecting players for ${halfName}`);
                     
                     const totalPlayers = availablePlayers.length;
                     const playersOnCourt = Math.min(5, totalPlayers);
                     
-                    // Calculate starting position for this period (cycling through all players)
-                    let startPosition = (i * 2) % totalPlayers; // Shift by 2 each period
-                    
-                    // For second half, add additional offset to create variety
-                    if (halfName === 'secondHalf') {
-                        startPosition = (startPosition + Math.floor(totalPlayers / 2)) % totalPlayers;
+                    // Get players who were on bench last period (to prioritize for court time)
+                    const lastPeriodBench = [];
+                    if (i > 0) {
+                        const lastPeriod = rotations[halfName][i - 1];
+                        if (lastPeriod) {
+                            lastPeriodBench.push(...availablePlayers.filter(p => 
+                                !lastPeriod.players.some(op => op.id === p.id)
+                            ));
+                        }
                     }
                     
-                    console.log(`Starting at position ${startPosition} in player list`);
+                    console.log(`Players who were on bench last period:`, lastPeriodBench.map(p => p.name));
                     
-                    // Select players starting from the calculated position
-                    for (let j = 0; j < playersOnCourt; j++) {
-                        const playerIndex = (startPosition + j) % totalPlayers;
-                        const player = availablePlayers[playerIndex];
-                        
-                        if (!usedPlayerIds.has(player.id)) {
+                    // PRIORITY 1: Players who were on bench last period MUST play
+                    lastPeriodBench.forEach(player => {
+                        if (!usedPlayerIds.has(player.id) && onCourt.length < playersOnCourt) {
+                            onCourt.push(player);
+                            usedPlayerIds.add(player.id);
+                            console.log(`Prioritized ${player.name} - was on bench last period`);
+                        }
+                    });
+                    
+                    // PRIORITY 2: Fill remaining spots with players who haven't played yet
+                    const remainingPlayers = availablePlayers.filter(p => !usedPlayerIds.has(p.id));
+                    
+                    // Sort remaining by playing time deficit (who needs more minutes)
+                    remainingPlayers.sort((a, b) => {
+                        const aTime = rotations.playingTimes[a.id] || 0;
+                        const bTime = rotations.playingTimes[b.id] || 0;
+                        const aTarget = targetMinutes[a.id] || 0;
+                        const bTarget = targetMinutes[b.id] || 0;
+                        const aDeficit = aTarget - aTime;
+                        const bDeficit = bTarget - bTime;
+                        return bDeficit - aDeficit; // Higher deficit first
+                    });
+                    
+                    // Add remaining players to reach 5 on court
+                    remainingPlayers.forEach(player => {
+                        if (!usedPlayerIds.has(player.id) && onCourt.length < playersOnCourt) {
                             onCourt.push(player);
                             usedPlayerIds.add(player.id);
                         }
-                    }
+                    });
                     
                     // KEY PLAYER BONUS: Give key players more court time
                     if (keyPlayers.length > 0) {
