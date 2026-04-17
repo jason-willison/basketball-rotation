@@ -388,58 +388,42 @@
                         }
                     });
                 } else {
-                    // Regular period selection with balanced rotation approach
-                    const playersWithDeficit = availablePlayers.map(player => {
-                        const benchCount = rotations.benchCounts[halfName][player.id] || 0;
-                        const totalPlayingTime = rotations.playingTimes[player.id] || 0;
-                        return {
-                            ...player,
-                            deficit: targetMinutes[player.id] - totalPlayingTime,
-                            benchCount: benchCount,
-                            totalPlayingTime: totalPlayingTime,
-                            isKey: keyPlayers.some(kp => kp.id === player.id)
-                        };
-                    }).sort((a, b) => {
-                        // For final periods of second half, strongly prioritize key players
-                        if (halfName === 'secondHalf' && i >= periods - 2) {
-                            if (a.isKey !== b.isKey) {
-                                return b.isKey - a.isKey; // Key players first
-                            }
-                        }
-                        
-                        // Primary sort: Balance between bench count and playing time
-                        const aScore = (a.benchCount * 10) - a.deficit; // Lower is better
-                        const bScore = (b.benchCount * 10) - b.deficit;
-                        
-                        if (Math.abs(aScore - bScore) > 2) {
-                            return aScore - bScore; // Lower score first (less bench time, more deficit)
-                        }
-                        
-                        // Tie-breaker: Key player preference
-                        if (a.isKey !== b.isKey) {
-                            return b.isKey - a.isKey;
-                        }
-                        
-                        // Final tie-breaker: Random element to avoid same patterns
-                        return Math.random() - 0.5;
-                    });
+                    // SIMPLE ROTATION: Round-robin approach with key player priority
+                    console.log(`Period ${i+1}: Selecting players for ${halfName}`);
                     
-                    // Select exactly 5 unique players with round-robin influence
-                    // Add some rotation logic to ensure variety
-                    const baseOffset = i * 2; // Offset selection based on period
-                    const shuffledPlayers = [...playersWithDeficit];
+                    // Start with a simple rotation offset for this period
+                    const rotationOffset = i * 2; // Shift starting position each period
                     
-                    // Apply base offset rotation
-                    for (let j = 0; j < baseOffset % shuffledPlayers.length; j++) {
-                        shuffledPlayers.push(shuffledPlayers.shift());
+                    // Create a rotated list of all available players
+                    const rotatedPlayers = [...availablePlayers];
+                    for (let shift = 0; shift < rotationOffset % availablePlayers.length; shift++) {
+                        rotatedPlayers.push(rotatedPlayers.shift());
                     }
                     
-                    shuffledPlayers.forEach(player => {
+                    // Separate key players and regular players
+                    const keyPlayersInRotated = rotatedPlayers.filter(p => keyPlayers.some(kp => kp.id === p.id));
+                    const regularPlayersInRotated = rotatedPlayers.filter(p => !keyPlayers.some(kp => kp.id === p.id));
+                    
+                    // For final periods, prioritize key players
+                    if (halfName === 'secondHalf' && i >= periods - 2) {
+                        // Final periods: Ensure key players are included
+                        keyPlayersInRotated.forEach(player => {
+                            if (!usedPlayerIds.has(player.id) && onCourt.length < 5) {
+                                onCourt.push(player);
+                                usedPlayerIds.add(player.id);
+                            }
+                        });
+                    }
+                    
+                    // Fill remaining spots with regular round-robin rotation
+                    [...keyPlayersInRotated, ...regularPlayersInRotated].forEach(player => {
                         if (!usedPlayerIds.has(player.id) && onCourt.length < 5) {
                             onCourt.push(player);
                             usedPlayerIds.add(player.id);
                         }
                     });
+                    
+                    console.log(`Period ${i+1} players:`, onCourt.map(p => p.name));
                 }
                 
                 // Ensure we have exactly the right number of players (no more, no less)
