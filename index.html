@@ -422,27 +422,34 @@
                         }
                     }
                     
-                    // If we need more players and some key players aren't included in final period
-                    if (halfName === 'secondHalf' && i >= periods - 2 && keyPlayers.length > 0) {
-                        // Ensure at least some key players are in final period
-                        keyPlayers.forEach(keyPlayer => {
-                            if (!usedPlayerIds.has(keyPlayer.id) && onCourt.length < 5) {
-                                // Replace a non-key player if needed
-                                if (onCourt.length === 5) {
+                    // KEY PLAYER BONUS: Give key players more court time
+                    if (keyPlayers.length > 0) {
+                        // Calculate if key players should be prioritized in this period
+                        const keyPlayerChance = 0.75; // 75% chance key players are included
+                        const shouldPrioritizeKeyPlayers = Math.random() < keyPlayerChance || 
+                            (halfName === 'secondHalf' && i >= periods - 2); // Always in final periods
+                        
+                        if (shouldPrioritizeKeyPlayers) {
+                            // Try to include key players in this period
+                            keyPlayers.forEach(keyPlayer => {
+                                if (!usedPlayerIds.has(keyPlayer.id) && onCourt.length < 5) {
+                                    // Add key player if there's space
+                                    onCourt.push(keyPlayer);
+                                    usedPlayerIds.add(keyPlayer.id);
+                                    console.log(`Added key player ${keyPlayer.name} for extra time`);
+                                } else if (!usedPlayerIds.has(keyPlayer.id) && onCourt.length === 5) {
+                                    // Replace a non-key player with key player
                                     const nonKeyIndex = onCourt.findIndex(p => !keyPlayers.some(kp => kp.id === p.id));
                                     if (nonKeyIndex >= 0) {
                                         const replacedPlayer = onCourt[nonKeyIndex];
                                         onCourt[nonKeyIndex] = keyPlayer;
                                         usedPlayerIds.delete(replacedPlayer.id);
                                         usedPlayerIds.add(keyPlayer.id);
-                                        console.log(`Replaced ${replacedPlayer.name} with key player ${keyPlayer.name} for final period`);
+                                        console.log(`Replaced ${replacedPlayer.name} with key player ${keyPlayer.name} for extra time`);
                                     }
-                                } else {
-                                    onCourt.push(keyPlayer);
-                                    usedPlayerIds.add(keyPlayer.id);
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                     
                     const benchPlayers = availablePlayers.filter(p => !onCourt.some(op => op.id === p.id));
