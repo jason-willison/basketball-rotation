@@ -395,53 +395,55 @@
                         }
                     });
                 } else {
-                    // FAIR BENCH DISTRIBUTION: Minimize repeated bench appearances
+                    // SIMPLE GUARANTEED ROTATION: Force different players each period
                     console.log(`Period ${i+1}: Selecting players for ${halfName}`);
                     
-                    // Calculate who has been on bench least in this half
-                    const playersWithBenchInfo = availablePlayers.map(player => {
-                        const benchCount = rotations.benchCounts[halfName][player.id] || 0;
-                        const totalPlayingTime = rotations.playingTimes[player.id] || 0;
-                        const isKey = keyPlayers.some(kp => kp.id === player.id);
-                        return {
-                            ...player,
-                            benchCount: benchCount,
-                            totalPlayingTime: totalPlayingTime,
-                            isKey: isKey,
-                            deficit: targetMinutes[player.id] - totalPlayingTime
-                        };
-                    });
+                    const totalPlayers = availablePlayers.length;
+                    const playersOnCourt = Math.min(5, totalPlayers);
                     
-                    // Sort by: 1) Key player priority for final periods, 2) Fewer bench sits, 3) Playing time deficit
-                    playersWithBenchInfo.sort((a, b) => {
-                        // Final period: Prioritize key players
-                        if (halfName === 'secondHalf' && i >= periods - 2) {
-                            if (a.isKey !== b.isKey) {
-                                return b.isKey - a.isKey;
-                            }
-                        }
-                        
-                        // Primary: Who has sat on bench less in this half
-                        if (a.benchCount !== b.benchCount) {
-                            return a.benchCount - b.benchCount; // Fewer bench sits first
-                        }
-                        
-                        // Secondary: Who needs more playing time
-                        if (Math.abs(a.deficit - b.deficit) > 0.5) {
-                            return b.deficit - a.deficit; // Higher deficit first
-                        }
-                        
-                        // Tertiary: Key player preference
-                        return b.isKey - a.isKey;
-                    });
+                    // Calculate starting position for this period (cycling through all players)
+                    let startPosition = (i * 2) % totalPlayers; // Shift by 2 each period
                     
-                    // Select the top 5 players (those with least bench time and highest deficit)
-                    playersWithBenchInfo.slice(0, 5).forEach(player => {
-                        if (!usedPlayerIds.has(player.id) && onCourt.length < 5) {
+                    // For second half, add additional offset to create variety
+                    if (halfName === 'secondHalf') {
+                        startPosition = (startPosition + Math.floor(totalPlayers / 2)) % totalPlayers;
+                    }
+                    
+                    console.log(`Starting at position ${startPosition} in player list`);
+                    
+                    // Select players starting from the calculated position
+                    for (let j = 0; j < playersOnCourt; j++) {
+                        const playerIndex = (startPosition + j) % totalPlayers;
+                        const player = availablePlayers[playerIndex];
+                        
+                        if (!usedPlayerIds.has(player.id)) {
                             onCourt.push(player);
                             usedPlayerIds.add(player.id);
                         }
-                    });
+                    }
+                    
+                    // If we need more players and some key players aren't included in final period
+                    if (halfName === 'secondHalf' && i >= periods - 2 && keyPlayers.length > 0) {
+                        // Ensure at least some key players are in final period
+                        keyPlayers.forEach(keyPlayer => {
+                            if (!usedPlayerIds.has(keyPlayer.id) && onCourt.length < 5) {
+                                // Replace a non-key player if needed
+                                if (onCourt.length === 5) {
+                                    const nonKeyIndex = onCourt.findIndex(p => !keyPlayers.some(kp => kp.id === p.id));
+                                    if (nonKeyIndex >= 0) {
+                                        const replacedPlayer = onCourt[nonKeyIndex];
+                                        onCourt[nonKeyIndex] = keyPlayer;
+                                        usedPlayerIds.delete(replacedPlayer.id);
+                                        usedPlayerIds.add(keyPlayer.id);
+                                        console.log(`Replaced ${replacedPlayer.name} with key player ${keyPlayer.name} for final period`);
+                                    }
+                                } else {
+                                    onCourt.push(keyPlayer);
+                                    usedPlayerIds.add(keyPlayer.id);
+                                }
+                            }
+                        });
+                    }
                     
                     const benchPlayers = availablePlayers.filter(p => !onCourt.some(op => op.id === p.id));
                     console.log(`Period ${i+1} on court:`, onCourt.map(p => p.name));
