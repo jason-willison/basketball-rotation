@@ -388,13 +388,15 @@
                         }
                     });
                 } else {
-                    // Regular period selection based on deficit, key player priority, and bench distribution
+                    // Regular period selection with balanced rotation approach
                     const playersWithDeficit = availablePlayers.map(player => {
                         const benchCount = rotations.benchCounts[halfName][player.id] || 0;
+                        const totalPlayingTime = rotations.playingTimes[player.id] || 0;
                         return {
                             ...player,
-                            deficit: targetMinutes[player.id] - (rotations.playingTimes[player.id] || 0),
+                            deficit: targetMinutes[player.id] - totalPlayingTime,
                             benchCount: benchCount,
+                            totalPlayingTime: totalPlayingTime,
                             isKey: keyPlayers.some(kp => kp.id === player.id)
                         };
                     }).sort((a, b) => {
@@ -405,22 +407,34 @@
                             }
                         }
                         
-                        // Primary: Prioritize players with fewer bench appearances in this half
-                        if (a.benchCount !== b.benchCount) {
-                            return a.benchCount - b.benchCount; // Fewer bench times first
+                        // Primary sort: Balance between bench count and playing time
+                        const aScore = (a.benchCount * 10) - a.deficit; // Lower is better
+                        const bScore = (b.benchCount * 10) - b.deficit;
+                        
+                        if (Math.abs(aScore - bScore) > 2) {
+                            return aScore - bScore; // Lower score first (less bench time, more deficit)
                         }
                         
-                        // Secondary: Playing time deficit
-                        if (Math.abs(a.deficit - b.deficit) > 1) {
-                            return b.deficit - a.deficit; // Highest deficit first
+                        // Tie-breaker: Key player preference
+                        if (a.isKey !== b.isKey) {
+                            return b.isKey - a.isKey;
                         }
                         
-                        // Tertiary: Key player preference for ties
-                        return b.isKey - a.isKey;
+                        // Final tie-breaker: Random element to avoid same patterns
+                        return Math.random() - 0.5;
                     });
                     
-                    // Select exactly 5 unique players
-                    playersWithDeficit.forEach(player => {
+                    // Select exactly 5 unique players with round-robin influence
+                    // Add some rotation logic to ensure variety
+                    const baseOffset = i * 2; // Offset selection based on period
+                    const shuffledPlayers = [...playersWithDeficit];
+                    
+                    // Apply base offset rotation
+                    for (let j = 0; j < baseOffset % shuffledPlayers.length; j++) {
+                        shuffledPlayers.push(shuffledPlayers.shift());
+                    }
+                    
+                    shuffledPlayers.forEach(player => {
                         if (!usedPlayerIds.has(player.id) && onCourt.length < 5) {
                             onCourt.push(player);
                             usedPlayerIds.add(player.id);
