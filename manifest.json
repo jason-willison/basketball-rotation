@@ -1,0 +1,51 @@
+{
+  "name": "Basketball Rotation Manager",
+  "short_name": "Basketball Coach",
+  "description": "Fair substitutions and rotations for youth basketball teams",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F9FA",
+  "theme_color": "#FF6B35",
+  "orientation": "portrait-primary",
+  "categories": ["sports", "utilities", "productivity"],
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Basketball rotation management on mobile"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Game Timer",
+      "short_name": "Game Timer",
+      "description": "Jump directly to the game timer",
+      "url": "/?section=timer",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Calculate Rotations", 
+      "short_name": "Rotations",
+      "description": "Calculate fair player rotations",
+      "url": "/?section=rotation",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

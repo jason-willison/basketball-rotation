@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basketball Rotation Manager</title>
+    <meta name="theme-color" content="#FF6B35">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Basketball Coach">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>🏀 Basketball Rotation Manager</h1>
+            <p class="subtitle">Fair substitutions for youth basketball</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Step 1: Team Roster -->
+            <section id="roster-section" class="section active">
+                <h2>Team Roster</h2>
+                <p class="help-text">Enter your team's player names:</p>
+                
+                <div class="player-inputs">
+                    <input type="text" class="player-input" placeholder="Player 1 name" data-player="1">
+                    <input type="text" class="player-input" placeholder="Player 2 name" data-player="2">
+                    <input type="text" class="player-input" placeholder="Player 3 name" data-player="3">
+                    <input type="text" class="player-input" placeholder="Player 4 name" data-player="4">
+                    <input type="text" class="player-input" placeholder="Player 5 name" data-player="5">
+                    <input type="text" class="player-input" placeholder="Player 6 name" data-player="6">
+                    <input type="text" class="player-input" placeholder="Player 7 name" data-player="7">
+                    <input type="text" class="player-input" placeholder="Player 8 name" data-player="8">
+                    <input type="text" class="player-input" placeholder="Player 9 name (optional)" data-player="9">
+                    <input type="text" class="player-input" placeholder="Player 10 name (optional)" data-player="10">
+                </div>
+                
+                <button class="btn-primary" onclick="saveRoster()">Save Roster</button>
+            </section>
+
+            <!-- Step 2: Available Players -->
+            <section id="availability-section" class="section">
+                <h2>Game Day - Available Players</h2>
+                <p class="help-text">Select which players showed up today:</p>
+                
+                <div id="player-checkboxes" class="player-checkboxes">
+                    <!-- Dynamically populated -->
+                </div>
+                
+                <div class="selected-count">
+                    <span id="selected-count">0</span> players selected
+                </div>
+                
+                <button class="btn-primary" onclick="calculateRotations()">Calculate Fair Rotations</button>
+            </section>
+
+            <!-- Step 3: Rotation Schedule -->
+            <section id="rotation-section" class="section">
+                <h2>Rotation Schedule</h2>
+                <p class="help-text">2 halves × 20 minutes = 40 minutes total</p>
+                
+                <div class="game-info">
+                    <div class="half-info">
+                        <h3>1st Half (0-20 min)</h3>
+                        <div id="first-half-rotation" class="rotation-display">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+                    
+                    <div class="half-info">
+                        <h3>2nd Half (20-40 min)</h3>
+                        <div id="second-half-rotation" class="rotation-display">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="playing-time-summary">
+                    <h3>Playing Time Summary</h3>
+                    <div id="time-summary" class="time-summary">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="backToAvailability()">Back to Player Selection</button>
+                    <button class="btn-primary" onclick="startGameTimer()">Start Game Timer</button>
+                </div>
+            </section>
+
+            <!-- Step 4: Game Timer -->
+            <section id="timer-section" class="section">
+                <h2>Game In Progress</h2>
+                
+                <div class="timer-display">
+                    <div class="current-time">
+                        <span id="game-timer">00:00</span>
+                    </div>
+                    <div class="current-half">
+                        <span id="current-half">1st Half</span>
+                    </div>
+                </div>
+                
+                <div class="on-court-display">
+                    <h3>Currently On Court</h3>
+                    <div id="current-players" class="current-players">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+                
+                <div class="next-sub">
+                    <h3>Next Substitution</h3>
+                    <div id="next-substitution" class="next-sub-info">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+                
+                <div class="timer-controls">
+                    <button id="play-pause-btn" class="btn-primary" onclick="toggleTimer()">⏸️ Pause</button>
+                    <button class="btn-secondary" onclick="endGame()">End Game</button>
+                </div>
+            </section>
+            
+        </main>
+
+        <!-- Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-btn" onclick="showSection('roster')">Roster</button>
+            <button class="nav-btn" onclick="showSection('availability')">Available</button>
+            <button class="nav-btn" onclick="showSection('rotation')">Rotations</button>
+            <button class="nav-btn" onclick="showSection('timer')">Game</button>
+        </nav>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
