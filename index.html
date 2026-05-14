@@ -329,17 +329,20 @@
             const totalPlayerMinutes = 5 * totalGameMinutes; // 5 players on court for 40 minutes = 200 player-minutes
             
             const keyPlayerIds = keyPlayers.map(p => p.id);
-            const regularPlayerIds = availablePlayers.filter(p => !keyPlayerIds.includes(p.id)).map(p => p.id);
-            
+            const keyPlayerWeight = 1.25;
             let targetMinutes = {};
             
-            // Equal time for everyone - fair rotation throughout the game
-            const equalMinutes = totalPlayerMinutes / availablePlayers.length;
+            // Key players get about 25% more court time while preserving total court minutes.
+            const totalPlayerWeight = availablePlayers.reduce((sum, player) => {
+                return sum + (keyPlayerIds.includes(player.id) ? keyPlayerWeight : 1);
+            }, 0);
+            
             availablePlayers.forEach(player => {
-                targetMinutes[player.id] = equalMinutes;
+                const playerWeight = keyPlayerIds.includes(player.id) ? keyPlayerWeight : 1;
+                targetMinutes[player.id] = (totalPlayerMinutes * playerWeight) / totalPlayerWeight;
             });
             
-            console.log('Target minutes (equal for all):', targetMinutes);
+            console.log('Target minutes:', targetMinutes);
             
             // Generate both halves
             generateHalf(0, 20, periodsPerHalf, actualPeriodLength, 'firstHalf', targetMinutes);
@@ -395,6 +398,13 @@
                         if (lastPeriod) {
                             lastPeriodBench.push(...availablePlayers.filter(p => 
                                 !lastPeriod.players.some(op => op.id === p.id)
+                            ));
+                        }
+                    } else if (halfName === 'secondHalf') {
+                        const finalFirstHalfPeriod = rotations.firstHalf[rotations.firstHalf.length - 1];
+                        if (finalFirstHalfPeriod) {
+                            lastPeriodBench.push(...availablePlayers.filter(p =>
+                                !finalFirstHalfPeriod.players.some(op => op.id === p.id)
                             ));
                         }
                     }
