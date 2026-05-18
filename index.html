@@ -352,46 +352,23 @@
         }
         
         function generateHalf(startMinute, endMinute, periods, periodLength, halfName, targetMinutes) {
+            const totalGameMinutes = 40;
+            
             for (let i = 0; i < periods; i++) {
                 const startTime = startMinute + (i * periodLength);
                 const endTime = Math.min(endMinute, startTime + periodLength);
-                const isLastPeriod = (i === periods - 1);
-                const isGameEnd = (halfName === 'secondHalf' && isLastPeriod);
-                
                 let onCourt = [];
-                const usedPlayerIds = new Set(); // Track used players to prevent duplicates
+                const totalPlayers = availablePlayers.length;
+                const playersOnCourt = Math.min(5, totalPlayers);
+                const playersToBench = totalPlayers - playersOnCourt;
                 
-                if (isGameEnd && keyPlayers.length > 0) {
-                    // For the final period, ensure ALL key players are on court
-                    console.log('Final period - ensuring key players are on court');
-                    keyPlayers.forEach(player => {
-                        if (!usedPlayerIds.has(player.id) && onCourt.length < 5) {
-                            onCourt.push(player);
-                            usedPlayerIds.add(player.id);
-                        }
-                    });
-                    
-                    // Fill remaining spots with other players based on deficit
-                    const remainingPlayers = availablePlayers.filter(p => !usedPlayerIds.has(p.id));
-                    const sortedRemaining = remainingPlayers.map(player => ({
-                        ...player,
-                        deficit: targetMinutes[player.id] - (rotations.playingTimes[player.id] || 0)
-                    })).sort((a, b) => b.deficit - a.deficit);
-                    
-                    sortedRemaining.forEach(player => {
-                        if (!usedPlayerIds.has(player.id) && onCourt.length < 5) {
-                            onCourt.push(player);
-                            usedPlayerIds.add(player.id);
-                        }
-                    });
+                if (playersToBench === 0) {
+                    onCourt = [...availablePlayers];
                 } else {
-                    // NO CONSECUTIVE BENCH: Ensure fair rotation without back-to-back bench time
-                    console.log(`Period ${i+1}: Selecting players for ${halfName}`);
+                    // Choose the bench first. This prevents key players from filling every court slot
+                    // while still favoring them through their higher target minutes.
+                    console.log(`Period ${i+1}: Selecting bench for ${halfName}`);
                     
-                    const totalPlayers = availablePlayers.length;
-                    const playersOnCourt = Math.min(5, totalPlayers);
-                    
-                    // Get players who were on bench last period (to prioritize for court time)
                     const lastPeriodBench = [];
                     if (i > 0) {
                         const lastPeriod = rotations[halfName][i - 1];
@@ -409,69 +386,41 @@
                         }
                     }
                     
-                    console.log(`Players who were on bench last period:`, lastPeriodBench.map(p => p.name));
+                    const lastBenchIds = new Set(lastPeriodBench.map(player => player.id));
+                    const benchCount = player => {
+                        return (rotations.benchCounts.firstHalf[player.id] || 0) +
+                            (rotations.benchCounts.secondHalf[player.id] || 0);
+                    };
+                    const playedMinutes = player => rotations.playingTimes[player.id] || 0;
                     
-                    // PRIORITY 1: Players who were on bench last period MUST play
-                    lastPeriodBench.forEach(player => {
-                        if (!usedPlayerIds.has(player.id) && onCourt.length < playersOnCourt) {
-                            onCourt.push(player);
-                            usedPlayerIds.add(player.id);
-                            console.log(`Prioritized ${player.name} - was on bench last period`);
-                        }
-                    });
-                    
-                    // PRIORITY 2: Fill remaining spots with players who haven't played yet
-                    const remainingPlayers = availablePlayers.filter(p => !usedPlayerIds.has(p.id));
-                    
-                    // Sort remaining by playing time deficit (who needs more minutes)
-                    remainingPlayers.sort((a, b) => {
-                        const aTime = rotations.playingTimes[a.id] || 0;
-                        const bTime = rotations.playingTimes[b.id] || 0;
-                        const aTarget = targetMinutes[a.id] || 0;
-                        const bTarget = targetMinutes[b.id] || 0;
-                        const aDeficit = aTarget - aTime;
-                        const bDeficit = bTarget - bTime;
-                        return bDeficit - aDeficit; // Higher deficit first
-                    });
-                    
-                    // Add remaining players to reach 5 on court
-                    remainingPlayers.forEach(player => {
-                        if (!usedPlayerIds.has(player.id) && onCourt.length < playersOnCourt) {
-                            onCourt.push(player);
-                            usedPlayerIds.add(player.id);
-                        }
-                    });
-                    
-                    // CLUTCH TIME: Ensure key players are on court for final period only
-                    if (keyPlayers.length > 0 && halfName === 'secondHalf' && i === periods - 1) {
-                        console.log('FINAL PERIOD: Ensuring key players are on court for game ending');
-                        
-                        keyPlayers.forEach(keyPlayer => {
-                            if (!usedPlayerIds.has(keyPlayer.id)) {
-                                if (onCourt.length < 5) {
-                                    // Add key player if there's space
-                                    onCourt.push(keyPlayer);
-                                    usedPlayerIds.add(keyPlayer.id);
-                                    console.log(`Added key player ${keyPlayer.name} for final period`);
-                                } else {
-                                    // Replace a non-key player for final period
-                                    const replaceableIndex = onCourt.findIndex(p => 
-                                        !keyPlayers.some(kp => kp.id === p.id)
-                                    );
-                                    
-                                    if (replaceableIndex >= 0) {
-                                        const replacedPlayer = onCourt[replaceableIndex];
-                                        onCourt[replaceableIndex] = keyPlayer;
-                                        usedPlayerIds.delete(replacedPlayer.id);
-                                        usedPlayerIds.add(keyPlayer.id);
-                                        console.log(`FINAL PERIOD: Replaced ${replacedPlayer.name} with key player ${keyPlayer.name}`);
-                                    }
-                                }
-                            }
-                        });
+                    let benchCandidates = availablePlayers.filter(player => !lastBenchIds.has(player.id));
+                    if (benchCandidates.length < playersToBench) {
+                        benchCandidates = [...availablePlayers];
                     }
                     
-                    const benchPlayers = availablePlayers.filter(p => !onCourt.some(op => op.id === p.id));
+                    const benchPlayers = benchCandidates
+                        .map(player => {
+                            const isKeyPlayer = keyPlayers.some(keyPlayer => keyPlayer.id === player.id);
+                            const needsFirstRest = benchCount(player) === 0 &&
+                                playedMinutes(player) >= totalGameMinutes / 2;
+                            return {
+                                player,
+                                score: (playedMinutes(player) - (targetMinutes[player.id] || 0)) +
+                                    (needsFirstRest ? 1000 : 0) +
+                                    (needsFirstRest && isKeyPlayer ? 50 : 0)
+                            };
+                        })
+                        .sort((a, b) => {
+                            if (b.score !== a.score) return b.score - a.score;
+                            return benchCount(a.player) - benchCount(b.player);
+                        })
+                        .slice(0, playersToBench)
+                        .map(item => item.player);
+                    
+                    const benchIds = new Set(benchPlayers.map(player => player.id));
+                    onCourt = availablePlayers.filter(player => !benchIds.has(player.id));
+                    
+                    console.log(`Players who were on bench last period:`, lastPeriodBench.map(p => p.name));
                     console.log(`Period ${i+1} on court:`, onCourt.map(p => p.name));
                     console.log(`Period ${i+1} on bench:`, benchPlayers.map(p => p.name));
                 }
